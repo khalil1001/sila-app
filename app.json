@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.khalil1001.silaapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +27,18 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro",
+      "backgroundColor": "#ffffff",
+      "themeColor": "#667eea",
+      "display": "standalone",
+      "name": "Sila - Transport Tunisie-France",
+      "shortName": "Sila",
+      "description": "Application de transport entre la Tunisie et la France",
+      "lang": "fr",
+      "scope": "/",
+      "startUrl": "/",
+      "orientation": "portrait"
     },
     "plugins": [
       "expo-router",
@@ -43,6 +58,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f34f1850-28b6-4e50-a149-73d15d47ff24"
+      }
     }
   }
 }
