@@ -41,7 +41,6 @@
       "orientation": "portrait"
     },
     "plugins": [
-      "expo-router",
       [
         "expo-splash-screen",
         {
@@ -56,7 +55,6 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
