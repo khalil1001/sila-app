@@ -80,40 +80,76 @@ export default function LoginScreen({ route, navigation }) {
       const redirectUrl = getRedirectUrl();
       console.log('Using redirect URL:', redirectUrl);
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: true, // We'll handle the browser opening manually
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
+      // On web, let Supabase handle the redirect naturally
+      if (Platform.OS === 'web') {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
           },
-        },
-      });
+        });
 
-      console.log('OAuth response:', { data, error });
+        if (error) {
+          console.error('OAuth error:', error);
+          throw error;
+        }
+        // Supabase will automatically redirect to Google and back
+        // The session will be picked up by App.js via detectSessionInUrl
+      } else {
+        // On native mobile, use WebBrowser popup
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            skipBrowserRedirect: true,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
+          },
+        });
 
-      if (error) {
-        console.error('OAuth error:', error);
-        throw error;
-      }
+        console.log('OAuth response:', { data, error });
 
-      // Open the OAuth URL in a browser
-      if (data?.url) {
-        console.log('Opening OAuth URL:', data.url);
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          redirectUrl
-        );
+        if (error) {
+          console.error('OAuth error:', error);
+          throw error;
+        }
 
-        console.log('WebBrowser result:', result);
+        // Open the OAuth URL in a browser
+        if (data?.url) {
+          console.log('Opening OAuth URL:', data.url);
+          const result = await WebBrowser.openAuthSessionAsync(
+            data.url,
+            redirectUrl
+          );
 
-        if (result.type === 'success') {
-          // The URL should contain the auth tokens
-          console.log('OAuth succeeded, URL:', result.url);
-        } else if (result.type === 'cancel') {
-          Alert.alert('Annulé', 'Vous avez annulé la connexion avec Google.');
+          console.log('WebBrowser result:', result);
+
+          if (result.type === 'success') {
+            // The URL should contain the auth code
+            console.log('OAuth succeeded, URL:', result.url);
+            // Extract and handle the code from the URL
+            const url = result.url;
+            const params = new URLSearchParams(url.split('?')[1] || '');
+            const code = params.get('code');
+
+            if (code) {
+              // Exchange code for session using Supabase method
+              const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+              if (exchangeError) {
+                console.error('Error exchanging code:', exchangeError);
+                throw exchangeError;
+              }
+              console.log('Session created successfully from code exchange');
+            }
+          } else if (result.type === 'cancel') {
+            Alert.alert('Annulé', 'Vous avez annulé la connexion avec Google.');
+          }
         }
       }
     } catch (error) {
