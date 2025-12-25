@@ -29,7 +29,7 @@ export default function MapSelectionScreen({ route, navigation }) {
         setAddress(data.display_name);
       }
     } catch (error) {
-      console.error('Error getting address:', error);
+      // Silent error handling for reverse geocoding
     } finally {
       setLoading(false);
     }

@@ -7,9 +7,11 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Platform,
   Modal,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import { supabase } from '../lib/supabase';
 import {
   BRAND_COLORS,
@@ -34,11 +36,13 @@ export default function NewRequestScreen({ navigation }) {
   });
   const [loading, setLoading] = useState(false);
 
-  // Autocomplete state
+  // Autocomplete states
   const [departureSuggestions, setDepartureSuggestions] = useState([]);
   const [arrivalSuggestions, setArrivalSuggestions] = useState([]);
   const [departureSearch, setDepartureSearch] = useState('');
   const [arrivalSearch, setArrivalSearch] = useState('');
+
+  // Map modal states
   const [showMapModal, setShowMapModal] = useState(false);
   const [mapModalType, setMapModalType] = useState(null); // 'departure' or 'arrival'
 
@@ -61,7 +65,7 @@ export default function NewRequestScreen({ navigation }) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Helper functions
+  // Get country flag emoji
   const getCountryFlag = (country) => {
     const flags = {
       'tunisia': '🇹🇳',
@@ -73,6 +77,7 @@ export default function NewRequestScreen({ navigation }) {
     return flags[country.toLowerCase()] || '🌍';
   };
 
+  // Detect country from coordinates
   const detectCountry = (lat) => {
     if (lat >= 30 && lat <= 38) return 'Tunisia';
     if (lat >= 41 && lat <= 51) return 'France';
@@ -80,6 +85,7 @@ export default function NewRequestScreen({ navigation }) {
     return '';
   };
 
+  // Search address with Nominatim
   const searchAddress = async (query, type) => {
     if (query.length < 3) {
       if (type === 'departure') setDepartureSuggestions([]);
@@ -107,6 +113,7 @@ export default function NewRequestScreen({ navigation }) {
     }
   };
 
+  // Select address from suggestions
   const selectAddress = (suggestion, type) => {
     const coords = { lat: suggestion.lat, lng: suggestion.lng };
 
@@ -129,17 +136,29 @@ export default function NewRequestScreen({ navigation }) {
   const goToNextStep = () => {
     if (currentStep === 1) {
       if (!formData.departureCoords || !formData.arrivalCoords) {
-        Alert.alert('Attention', 'Veuillez sélectionner les adresses de départ et d\'arrivée sur la carte');
+        if (Platform.OS === 'web') {
+          alert('Veuillez sélectionner les adresses de départ et d\'arrivée');
+        } else {
+          Alert.alert('Attention', 'Veuillez sélectionner les adresses de départ et d\'arrivée sur la carte');
+        }
         return;
       }
     } else if (currentStep === 2) {
       if (!formData.weight) {
-        Alert.alert('Attention', 'Veuillez indiquer le poids du colis');
+        if (Platform.OS === 'web') {
+          alert('Veuillez indiquer le poids du colis');
+        } else {
+          Alert.alert('Attention', 'Veuillez indiquer le poids du colis');
+        }
         return;
       }
       const weightNum = parseFloat(formData.weight);
       if (isNaN(weightNum) || weightNum <= 0) {
-        Alert.alert('Erreur', 'Le poids doit être un nombre positif');
+        if (Platform.OS === 'web') {
+          alert('Le poids doit être un nombre positif');
+        } else {
+          Alert.alert('Erreur', 'Le poids doit être un nombre positif');
+        }
         return;
       }
     }
@@ -220,7 +239,9 @@ export default function NewRequestScreen({ navigation }) {
         .order('departure_date', { ascending: true })
         .limit(1);
 
-      if (offerError) throw offerError;
+      if (offerError) {
+        throw offerError;
+      }
 
       if (!offers || offers.length === 0) {
         // No match found - create pending request
@@ -238,8 +259,11 @@ export default function NewRequestScreen({ navigation }) {
             status: 'pending',
           });
 
-        if (requestError) throw requestError;
+        if (requestError) {
+          throw requestError;
+        }
 
+        // Show custom notification
         showCustomNotification('Demande créée ! Nous vous notifierons quand un transporteur sera disponible.');
         return;
       }
@@ -278,58 +302,65 @@ export default function NewRequestScreen({ navigation }) {
         offerId: matchedOffer.id,
       });
     } catch (error) {
-      Alert.alert('Erreur', error.message || 'Une erreur est survenue');
+      // Use native browser alert on web
+      if (Platform.OS === 'web') {
+        alert('Erreur\n\n' + (error.message || 'Une erreur est survenue'));
+      } else {
+        Alert.alert('Erreur', error.message || 'Une erreur est survenue');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Render map component for native
+  // Map click handler component
+  function MapClickHandler({ onMapClick }) {
+    useMapEvents({
+      click: (e) => {
+        onMapClick(e.latlng);
+      },
+    });
+    return null;
+  }
+
+  // Render map component for web
   const renderMap = () => {
     const defaultCenter = { lat: 36.8, lng: 10.2 };
 
+    // Fix Leaflet icon issue
+    if (typeof window !== 'undefined' && window.L) {
+      delete window.L.Icon.Default.prototype._getIconUrl;
+      window.L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      });
+    }
+
     return (
-      <MapView
+      <MapContainer
+        center={[defaultCenter.lat, defaultCenter.lng]}
+        zoom={6}
         style={{ height: '100%', width: '100%' }}
-        initialRegion={{
-          latitude: defaultCenter.lat,
-          longitude: defaultCenter.lng,
-          latitudeDelta: 8,
-          longitudeDelta: 12,
-        }}
-        onPress={(e) => {
-          const coords = {
-            lat: e.nativeEvent.coordinate.latitude,
-            lng: e.nativeEvent.coordinate.longitude,
-          };
-          if (!formData.departureCoords) {
-            handleMapPress(coords, 'departure');
-          } else if (!formData.arrivalCoords) {
-            handleMapPress(coords, 'arrival');
-          }
-        }}
       >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <MapClickHandler
+          onMapClick={(latlng) => {
+            const coords = { lat: latlng.lat, lng: latlng.lng };
+            if (!formData.departureCoords) {
+              handleMapPress(coords, 'departure');
+            } else if (!formData.arrivalCoords) {
+              handleMapPress(coords, 'arrival');
+            }
+          }}
+        />
         {formData.departureCoords && (
-          <Marker
-            coordinate={{
-              latitude: formData.departureCoords.lat,
-              longitude: formData.departureCoords.lng,
-            }}
-            title="Départ"
-            pinColor="green"
-          />
+          <Marker position={[formData.departureCoords.lat, formData.departureCoords.lng]} />
         )}
         {formData.arrivalCoords && (
-          <Marker
-            coordinate={{
-              latitude: formData.arrivalCoords.lat,
-              longitude: formData.arrivalCoords.lng,
-            }}
-            title="Arrivée"
-            pinColor="red"
-          />
+          <Marker position={[formData.arrivalCoords.lat, formData.arrivalCoords.lng]} />
         )}
-      </MapView>
+      </MapContainer>
     );
   };
 
@@ -366,17 +397,15 @@ export default function NewRequestScreen({ navigation }) {
         {/* Departure Autocomplete Suggestions */}
         {departureSuggestions.length > 0 && (
           <View style={styles.suggestionsDropdown}>
-            <ScrollView style={styles.suggestionsScroll}>
-              {departureSuggestions.map((suggestion, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.suggestionItem}
-                  onPress={() => selectAddress(suggestion, 'departure')}
-                >
-                  <Text style={styles.suggestionText}>{suggestion.address}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            {departureSuggestions.map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.suggestionItem}
+                onPress={() => selectAddress(suggestion, 'departure')}
+              >
+                <Text style={styles.suggestionText}>{suggestion.address}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
@@ -437,17 +466,15 @@ export default function NewRequestScreen({ navigation }) {
         {/* Arrival Autocomplete Suggestions */}
         {arrivalSuggestions.length > 0 && (
           <View style={styles.suggestionsDropdown}>
-            <ScrollView style={styles.suggestionsScroll}>
-              {arrivalSuggestions.map((suggestion, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.suggestionItem}
-                  onPress={() => selectAddress(suggestion, 'arrival')}
-                >
-                  <Text style={styles.suggestionText}>{suggestion.address}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            {arrivalSuggestions.map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.suggestionItem}
+                onPress={() => selectAddress(suggestion, 'arrival')}
+              >
+                <Text style={styles.suggestionText}>{suggestion.address}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
@@ -475,7 +502,7 @@ export default function NewRequestScreen({ navigation }) {
       <Modal
         visible={showMapModal}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowMapModal(false)}
       >
         <View style={styles.modalOverlay}>
@@ -990,11 +1017,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.XL,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    ...SHADOWS.MEDIUM,
   },
   mapButtonIcon: {
     fontSize: 24,
@@ -1006,14 +1029,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: BRAND_COLORS.BORDER_LIGHT,
     maxHeight: 200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  suggestionsScroll: {
-    flex: 1,
+    overflow: 'scroll',
+    ...SHADOWS.MEDIUM,
   },
   suggestionItem: {
     padding: SPACING.MD,
@@ -1068,12 +1085,9 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND_COLORS.FEATURE_BG,
     borderRadius: RADIUS.XL,
     width: '100%',
+    maxWidth: 800,
     maxHeight: '90%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
+    ...SHADOWS.LARGE,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1185,11 +1199,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '90%',
     maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
+    ...SHADOWS.LARGE,
   },
   notificationIcon: {
     width: 80,
