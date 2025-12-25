@@ -8,12 +8,14 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  ScrollView
 } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 const isLargeScreen = SCREEN_WIDTH > 768;
+const isSmallScreen = SCREEN_WIDTH < 375; // Very small phones
 
 // New Color Palette Suggestions
 const BRAND_COLORS = {
@@ -167,7 +169,11 @@ export default function WelcomeScreen({ navigation }) {
       </LinearGradient>
 
       {/* Right Half - Choice Buttons */}
-      <View style={styles.rightHalf}>
+      <ScrollView
+        style={styles.rightHalf}
+        contentContainerStyle={styles.rightScrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.rightContent}>
           {/* Question */}
           <Text style={styles.questionText}>Que voulez-vous faire ?</Text>
@@ -228,7 +234,7 @@ export default function WelcomeScreen({ navigation }) {
             💡 Cliquez sur le bouton qui vous correspond
           </Text>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -243,10 +249,10 @@ const styles = StyleSheet.create({
   // Left Half - Logo & Features
   leftHalf: {
     flex: isLargeScreen ? 1 : undefined,
-    height: isLargeScreen ? '100%' : '40%',
+    minHeight: isLargeScreen ? '100%' : SCREEN_HEIGHT * 0.35,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
+    padding: isLargeScreen ? 40 : (isSmallScreen ? 16 : 24),
   },
   leftContent: {
     alignItems: 'center',
@@ -293,7 +299,7 @@ const styles = StyleSheet.create({
   featuresContainer: {
     alignItems: 'flex-start',
     width: '100%',
-    maxWidth: 300,
+    maxWidth: isSmallScreen ? SCREEN_WIDTH - 40 : 300,
   },
   featureItem: {
     flexDirection: 'row',
@@ -332,14 +338,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Right Half - Choice Buttons (Unchanged)
+  // Right Half - Choice Buttons
   rightHalf: {
     flex: isLargeScreen ? 1 : undefined,
-    height: isLargeScreen ? '100%' : '60%',
+    minHeight: isLargeScreen ? '100%' : SCREEN_HEIGHT * 0.65,
     backgroundColor: '#ffffff',
+  },
+  rightScrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: isLargeScreen ? 40 : 20,
+    padding: isLargeScreen ? 40 : (isSmallScreen ? 16 : 20),
   },
   rightContent: {
     width: '100%',
@@ -364,8 +373,10 @@ const styles = StyleSheet.create({
   },
   choiceButton: {
     borderRadius: 20,
-    padding: isLargeScreen ? 30 : 24,
+    paddingVertical: isLargeScreen ? 30 : (isSmallScreen ? 20 : 24),
+    paddingHorizontal: isLargeScreen ? 30 : (isSmallScreen ? 16 : 24),
     alignItems: 'center',
+    minHeight: 48, // Ensure touch target
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
@@ -379,9 +390,9 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND_COLORS.PRIMARY_RED,
   },
   buttonIconCircle: {
-    width: isLargeScreen ? 70 : 60,
-    height: isLargeScreen ? 70 : 60,
-    borderRadius: isLargeScreen ? 35 : 30,
+    width: isLargeScreen ? 70 : (isSmallScreen ? 50 : 60),
+    height: isLargeScreen ? 70 : (isSmallScreen ? 50 : 60),
+    borderRadius: isLargeScreen ? 35 : (isSmallScreen ? 25 : 30),
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',

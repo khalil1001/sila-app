@@ -18,7 +18,9 @@ import {
   SHADOWS,
   SPACING,
   TYPOGRAPHY,
-  isLargeScreen
+  CONTAINER_WIDTHS,
+  isLargeScreen,
+  isXSmallScreen
 } from '../constants/theme.js';
 import { supabase } from '../lib/supabase';
 
@@ -262,9 +264,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: SPACING.SCREEN_PADDING,
+    paddingHorizontal: isXSmallScreen ? SPACING.MD : SPACING.SCREEN_PADDING,
+    paddingVertical: SPACING.SCREEN_PADDING,
     justifyContent: 'center',
-    maxWidth: isLargeScreen ? 500 : '100%',
+    maxWidth: CONTAINER_WIDTHS.FORM_MAX,
     width: '100%',
     alignSelf: 'center',
   },
@@ -296,8 +299,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: RADIUS.LG,
-    padding: isLargeScreen ? 18 : 16,
+    paddingVertical: isXSmallScreen ? 14 : (isLargeScreen ? 18 : 16),
+    paddingHorizontal: isXSmallScreen ? 12 : (isLargeScreen ? 18 : 16),
     marginBottom: SPACING.SM,
+    minHeight: 48, // Touch target
     ...SHADOWS.SMALL,
   },
   googleButton: {
@@ -345,19 +350,24 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: BRAND_COLORS.FEATURE_BG,
     borderRadius: RADIUS.MD,
-    padding: isLargeScreen ? 16 : 14,
+    paddingVertical: isXSmallScreen ? 12 : (isLargeScreen ? 16 : 14),
+    paddingHorizontal: isXSmallScreen ? 12 : (isLargeScreen ? 16 : 14),
     marginBottom: SPACING.SM,
     fontSize: TYPOGRAPHY.BODY_LARGE,
     borderWidth: 1,
     borderColor: BRAND_COLORS.BORDER_LIGHT,
     color: BRAND_COLORS.TEXT_DARK,
+    minHeight: 48, // Touch target
   },
   loginButton: {
     backgroundColor: BRAND_COLORS.PRIMARY_BLUE,
     borderRadius: RADIUS.LG,
-    padding: isLargeScreen ? 18 : 16,
+    paddingVertical: isXSmallScreen ? 14 : (isLargeScreen ? 18 : 16),
+    paddingHorizontal: isXSmallScreen ? 16 : (isLargeScreen ? 18 : 16),
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: SPACING.MD,
+    minHeight: 48, // Touch target
     ...SHADOWS.MEDIUM,
   },
   loginButtonDisabled: {
