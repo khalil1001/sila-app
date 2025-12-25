@@ -55,8 +55,8 @@ export default function InstallPWABanner() {
         return () => {
           window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         };
-      } catch (error) {
-        console.error('Error checking PWA banner status:', error);
+      } catch (_error) {
+        // Silent error handling for PWA banner check
       }
     };
 
@@ -71,19 +71,13 @@ export default function InstallPWABanner() {
       await deferredPrompt.prompt();
 
       // Wait for the user's response
-      const { outcome } = await deferredPrompt.userChoice;
-
-      if (outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-      } else {
-        console.log('User dismissed the install prompt');
-      }
+      await deferredPrompt.userChoice;
 
       // Clear the deferred prompt
       setDeferredPrompt(null);
       handleDismiss();
-    } catch (error) {
-      console.error('Error during PWA installation:', error);
+    } catch (_error) {
+      // Silent error handling for PWA installation
     }
   };
 
@@ -100,8 +94,8 @@ export default function InstallPWABanner() {
 
       // Save dismissal preference
       await AsyncStorage.setItem(BANNER_DISMISSED_KEY, 'true');
-    } catch (error) {
-      console.error('Error dismissing banner:', error);
+    } catch (_error) {
+      // Silent error handling for banner dismissal
     }
   };
 
@@ -113,7 +107,7 @@ export default function InstallPWABanner() {
         <View style={styles.textContainer}>
           <Text style={styles.icon}>📥</Text>
           <View style={styles.messageContainer}>
-            <Text style={styles.title}>Installer l'application</Text>
+            <Text style={styles.title}>Installer l&apos;application</Text>
             <Text style={styles.message}>
               Restez connecté et recevez des notifications
             </Text>

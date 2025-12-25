@@ -1,18 +1,25 @@
-import React, { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as WebBrowser from 'expo-web-browser';
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
+import {
+  BRAND_COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
+  TYPOGRAPHY,
+  isLargeScreen
+} from '../constants/theme.js';
 import { supabase } from '../lib/supabase';
 
 // This is needed for Expo Go OAuth to work properly
@@ -71,14 +78,10 @@ export default function LoginScreen({ route, navigation }) {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      console.log('Starting Google OAuth...');
-
       // Store user type for after redirect using AsyncStorage
       await AsyncStorage.setItem('pendingUserType', userType);
-      console.log('Stored user type:', userType);
 
       const redirectUrl = getRedirectUrl();
-      console.log('Using redirect URL:', redirectUrl);
 
       // On web, let Supabase handle the redirect naturally
       if (Platform.OS === 'web') {
@@ -90,11 +93,14 @@ export default function LoginScreen({ route, navigation }) {
               access_type: 'offline',
               prompt: 'consent',
             },
+            // Pass user_type in metadata (for database trigger on first login)
+            data: {
+              user_type: userType,
+            },
           },
         });
 
         if (error) {
-          console.error('OAuth error:', error);
           throw error;
         }
         // Supabase will automatically redirect to Google and back
@@ -110,29 +116,26 @@ export default function LoginScreen({ route, navigation }) {
               access_type: 'offline',
               prompt: 'consent',
             },
+            // Pass user_type in metadata (for database trigger on first login)
+            data: {
+              user_type: userType,
+            },
           },
         });
 
-        console.log('OAuth response:', { data, error });
-
         if (error) {
-          console.error('OAuth error:', error);
           throw error;
         }
 
         // Open the OAuth URL in a browser
         if (data?.url) {
-          console.log('Opening OAuth URL:', data.url);
           const result = await WebBrowser.openAuthSessionAsync(
             data.url,
             redirectUrl
           );
 
-          console.log('WebBrowser result:', result);
-
           if (result.type === 'success') {
             // The URL should contain the auth code
-            console.log('OAuth succeeded, URL:', result.url);
             // Extract and handle the code from the URL
             const url = result.url;
             const params = new URLSearchParams(url.split('?')[1] || '');
@@ -142,10 +145,8 @@ export default function LoginScreen({ route, navigation }) {
               // Exchange code for session using Supabase method
               const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
               if (exchangeError) {
-                console.error('Error exchanging code:', exchangeError);
                 throw exchangeError;
               }
-              console.log('Session created successfully from code exchange');
             }
           } else if (result.type === 'cancel') {
             Alert.alert('Annulé', 'Vous avez annulé la connexion avec Google.');
@@ -153,7 +154,6 @@ export default function LoginScreen({ route, navigation }) {
         }
       }
     } catch (error) {
-      console.error('Google login error:', error);
       Alert.alert(
         'Erreur OAuth',
         `Une erreur s'est produite: ${error.message}\n\nVérifiez que Google OAuth est bien configuré dans Supabase.`
@@ -240,6 +240,15 @@ export default function LoginScreen({ route, navigation }) {
               Pas de compte ? <Text style={styles.signupLinkBold}>Inscrivez-vous</Text>
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.termsLink}
+            onPress={() => navigation.navigate('Terms')}
+          >
+            <Text style={styles.termsLinkText}>
+              Conditions Générales & Politique de Remboursement
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -249,52 +258,52 @@ export default function LoginScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 20,
+    padding: SPACING.SCREEN_PADDING,
+    justifyContent: 'center',
+    maxWidth: isLargeScreen ? 500 : '100%',
+    width: '100%',
+    alignSelf: 'center',
   },
   header: {
-    marginTop: 40,
-    marginBottom: 20,
+    marginTop: isLargeScreen ? SPACING.XL : SPACING.XXL,
+    marginBottom: SPACING.LG,
   },
   backButton: {
-    marginBottom: 15,
+    marginBottom: SPACING.MD,
   },
   backButtonText: {
-    fontSize: 16,
-    color: '#667eea',
-    fontWeight: '600',
+    fontSize: TYPOGRAPHY.BODY_LARGE,
+    color: BRAND_COLORS.PRIMARY_BLUE,
+    fontWeight: TYPOGRAPHY.SEMIBOLD,
   },
   userTypeBadge: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333',
+    fontSize: TYPOGRAPHY.HEADING_LARGE,
+    fontWeight: TYPOGRAPHY.BOLD,
+    color: BRAND_COLORS.TEXT_DARK,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#333',
-    marginBottom: 30,
+    fontSize: TYPOGRAPHY.TITLE_LARGE,
+    fontWeight: TYPOGRAPHY.EXTRABOLD,
+    color: BRAND_COLORS.TEXT_DARK,
+    marginBottom: SPACING.XXL,
   },
   oauthButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 15,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: RADIUS.LG,
+    padding: isLargeScreen ? 18 : 16,
+    marginBottom: SPACING.SM,
+    ...SHADOWS.SMALL,
   },
   googleButton: {
-    backgroundColor: '#ffffff',
+    backgroundColor: BRAND_COLORS.FEATURE_BG,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: BRAND_COLORS.BORDER_LIGHT,
   },
   googleLogo: {
     width: 24,
@@ -303,87 +312,81 @@ const styles = StyleSheet.create({
     backgroundColor: '#4285f4',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: SPACING.SM,
   },
   googleLogoText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  facebookButton: {
-    backgroundColor: '#1877F2',
-  },
-  facebookLogo: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#ffffff',
-    marginRight: 12,
+    color: BRAND_COLORS.TEXT_WHITE,
+    fontSize: TYPOGRAPHY.BODY_LARGE,
+    fontWeight: TYPOGRAPHY.BOLD,
   },
   oauthButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  facebookText: {
-    color: '#ffffff',
+    fontSize: TYPOGRAPHY.BODY_LARGE,
+    fontWeight: TYPOGRAPHY.SEMIBOLD,
+    color: BRAND_COLORS.TEXT_DARK,
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 25,
+    marginVertical: SPACING.XL,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#ddd',
+    backgroundColor: BRAND_COLORS.BORDER_MEDIUM,
   },
   dividerText: {
-    marginHorizontal: 15,
-    color: '#999',
-    fontSize: 14,
+    marginHorizontal: SPACING.MD,
+    color: BRAND_COLORS.TEXT_SECONDARY,
+    fontSize: TYPOGRAPHY.BODY_MEDIUM,
   },
   form: {
     width: '100%',
   },
   input: {
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 16,
-    marginBottom: 12,
-    fontSize: 16,
+    backgroundColor: BRAND_COLORS.FEATURE_BG,
+    borderRadius: RADIUS.MD,
+    padding: isLargeScreen ? 16 : 14,
+    marginBottom: SPACING.SM,
+    fontSize: TYPOGRAPHY.BODY_LARGE,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: BRAND_COLORS.BORDER_LIGHT,
+    color: BRAND_COLORS.TEXT_DARK,
   },
   loginButton: {
-    backgroundColor: '#667eea',
-    borderRadius: 15,
-    padding: 16,
+    backgroundColor: BRAND_COLORS.PRIMARY_BLUE,
+    borderRadius: RADIUS.LG,
+    padding: isLargeScreen ? 18 : 16,
     alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#667eea',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    marginTop: SPACING.MD,
+    ...SHADOWS.MEDIUM,
   },
   loginButtonDisabled: {
     opacity: 0.6,
   },
   loginButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
+    color: BRAND_COLORS.TEXT_WHITE,
+    fontSize: TYPOGRAPHY.HEADING_MEDIUM,
+    fontWeight: TYPOGRAPHY.BOLD,
   },
   signupLink: {
-    marginTop: 20,
+    marginTop: SPACING.LG,
     alignItems: 'center',
   },
   signupLinkText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: TYPOGRAPHY.BODY_LARGE,
+    color: BRAND_COLORS.TEXT_SECONDARY,
   },
   signupLinkBold: {
-    fontWeight: '700',
-    color: '#667eea',
+    fontWeight: TYPOGRAPHY.BOLD,
+    color: BRAND_COLORS.PRIMARY_BLUE,
+  },
+  termsLink: {
+    marginTop: SPACING.XL,
+    alignItems: 'center',
+  },
+  termsLinkText: {
+    fontSize: TYPOGRAPHY.BODY_SMALL,
+    color: BRAND_COLORS.TEXT_SECONDARY,
+    textDecorationLine: 'underline',
   },
 });

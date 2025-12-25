@@ -11,6 +11,14 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '../lib/supabase';
+import {
+  BRAND_COLORS,
+  SPACING,
+  RADIUS,
+  SHADOWS,
+  TYPOGRAPHY,
+  isLargeScreen,
+} from '../constants/theme';
 
 export default function CreateOfferScreen({ navigation, route }) {
   const [direction, setDirection] = useState('tn_fr');
@@ -165,7 +173,7 @@ export default function CreateOfferScreen({ navigation, route }) {
         setShowDropoffSuggestions(suggestions.length > 0);
       }
     } catch (error) {
-      console.error('Error searching address:', error);
+      // Silent error handling for address search
     }
   };
 
@@ -259,7 +267,7 @@ export default function CreateOfferScreen({ navigation, route }) {
           <TextInput
             style={styles.input}
             placeholder="Ex: Tunis, Tunisia"
-            placeholderTextColor="#999"
+            placeholderTextColor={BRAND_COLORS.TEXT_SECONDARY}
             value={pickupLocation}
             onChangeText={(text) => handleAddressChange(text, true)}
           />
@@ -314,7 +322,7 @@ export default function CreateOfferScreen({ navigation, route }) {
           <TextInput
             style={styles.input}
             placeholder="Ex: Paris, France"
-            placeholderTextColor="#999"
+            placeholderTextColor={BRAND_COLORS.TEXT_SECONDARY}
             value={dropoffLocation}
             onChangeText={(text) => handleAddressChange(text, false)}
           />
@@ -472,7 +480,7 @@ export default function CreateOfferScreen({ navigation, route }) {
         <TextInput
           style={styles.input}
           placeholder="Ex: 50"
-          placeholderTextColor="#999"
+          placeholderTextColor={BRAND_COLORS.TEXT_SECONDARY}
           value={capacity}
           onChangeText={setCapacity}
           keyboardType="numeric"
@@ -495,174 +503,166 @@ export default function CreateOfferScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: BRAND_COLORS.BACKGROUND_LIGHT,
   },
   header: {
-    backgroundColor: '#ffffff',
-    paddingTop: 50,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    backgroundColor: BRAND_COLORS.FEATURE_BG,
+    paddingTop: SPACING.XXL + SPACING.MD + SPACING.XS,
+    paddingBottom: SPACING.MD,
+    paddingHorizontal: SPACING.LG,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: BRAND_COLORS.BORDER_LIGHT,
   },
   backButton: {
-    marginBottom: 10,
+    marginBottom: SPACING.SM,
   },
   backButtonText: {
-    fontSize: 16,
-    color: '#667eea',
-    fontWeight: '600',
+    fontSize: TYPOGRAPHY.BODY_LARGE,
+    color: BRAND_COLORS.PRIMARY_BLUE,
+    fontWeight: TYPOGRAPHY.SEMIBOLD,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#333',
+    fontSize: TYPOGRAPHY.TITLE_SMALL,
+    fontWeight: TYPOGRAPHY.EXTRABOLD,
+    color: BRAND_COLORS.TEXT_DARK,
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: SPACING.LG,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 10,
-    marginTop: 5,
+    fontSize: TYPOGRAPHY.BODY_LARGE,
+    fontWeight: TYPOGRAPHY.BOLD,
+    color: BRAND_COLORS.TEXT_DARK,
+    marginBottom: SPACING.SM,
+    marginTop: SPACING.XS,
   },
   directionButtons: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: SPACING.LG,
   },
   directionButton: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 16,
-    marginRight: 10,
+    backgroundColor: BRAND_COLORS.FEATURE_BG,
+    borderRadius: RADIUS.LG,
+    padding: SPACING.MD,
+    marginRight: SPACING.SM,
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: BRAND_COLORS.BORDER_LIGHT,
     alignItems: 'center',
   },
   directionButtonActive: {
-    borderColor: '#667eea',
-    backgroundColor: '#667eea',
+    borderColor: BRAND_COLORS.PRIMARY_BLUE,
+    backgroundColor: BRAND_COLORS.PRIMARY_BLUE,
   },
   directionButtonText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
+    fontSize: TYPOGRAPHY.HEADING_LARGE,
+    fontWeight: TYPOGRAPHY.BOLD,
+    color: BRAND_COLORS.TEXT_DARK,
   },
   directionButtonTextActive: {
-    color: '#ffffff',
+    color: BRAND_COLORS.TEXT_WHITE,
   },
   addressContainer: {
     position: 'relative',
     zIndex: 1,
   },
   input: {
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 16,
-    fontSize: 16,
+    backgroundColor: BRAND_COLORS.FEATURE_BG,
+    borderRadius: RADIUS.LG,
+    padding: SPACING.MD,
+    fontSize: TYPOGRAPHY.BODY_LARGE,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    marginBottom: 10,
+    borderColor: BRAND_COLORS.BORDER_LIGHT,
+    marginBottom: SPACING.SM,
   },
   suggestionsContainer: {
     position: 'absolute',
     top: 60,
     left: 0,
     right: 0,
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
+    backgroundColor: BRAND_COLORS.FEATURE_BG,
+    borderRadius: RADIUS.LG,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: BRAND_COLORS.BORDER_LIGHT,
     maxHeight: 200,
     zIndex: 1000,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    ...SHADOWS.MEDIUM,
   },
   suggestionsList: {
     maxHeight: 200,
   },
   suggestionItem: {
-    padding: 12,
+    padding: SPACING.SM,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: BRAND_COLORS.BORDER_LIGHT,
   },
   suggestionText: {
-    fontSize: 14,
-    color: '#333',
+    fontSize: TYPOGRAPHY.BODY_SMALL,
+    color: BRAND_COLORS.TEXT_DARK,
   },
   mapButton: {
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 14,
+    backgroundColor: BRAND_COLORS.FEATURE_BG,
+    borderRadius: RADIUS.LG,
+    padding: SPACING.MD - 2,
     borderWidth: 1,
-    borderColor: '#667eea',
-    marginBottom: 10,
+    borderColor: BRAND_COLORS.PRIMARY_BLUE,
+    marginBottom: SPACING.SM,
   },
   mapButtonSelected: {
-    backgroundColor: '#10b981',
-    borderColor: '#10b981',
+    backgroundColor: BRAND_COLORS.SUCCESS,
+    borderColor: BRAND_COLORS.SUCCESS,
   },
   mapButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#667eea',
+    fontSize: TYPOGRAPHY.BODY_LARGE,
+    fontWeight: TYPOGRAPHY.SEMIBOLD,
+    color: BRAND_COLORS.PRIMARY_BLUE,
     textAlign: 'center',
   },
   mapButtonTextSelected: {
-    color: '#ffffff',
+    color: BRAND_COLORS.TEXT_WHITE,
   },
   coordsInfo: {
-    fontSize: 12,
-    color: '#10b981',
-    fontWeight: '600',
-    marginBottom: 15,
+    fontSize: TYPOGRAPHY.CAPTION,
+    color: BRAND_COLORS.SUCCESS,
+    fontWeight: TYPOGRAPHY.SEMIBOLD,
+    marginBottom: SPACING.MD,
     textAlign: 'center',
   },
   dateTimeRow: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: SPACING.LG,
   },
   dateTimeButton: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 16,
-    marginRight: 10,
+    backgroundColor: BRAND_COLORS.FEATURE_BG,
+    borderRadius: RADIUS.LG,
+    padding: SPACING.MD,
+    marginRight: SPACING.SM,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: BRAND_COLORS.BORDER_LIGHT,
   },
   dateTimeButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: TYPOGRAPHY.BODY_LARGE,
+    fontWeight: TYPOGRAPHY.SEMIBOLD,
+    color: BRAND_COLORS.TEXT_DARK,
     textAlign: 'center',
   },
   createButton: {
-    backgroundColor: '#667eea',
-    borderRadius: 15,
-    padding: 18,
+    backgroundColor: BRAND_COLORS.PRIMARY_BLUE,
+    borderRadius: RADIUS.LG,
+    padding: SPACING.LG - 2,
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
-    shadowColor: '#667eea',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    marginTop: SPACING.LG,
+    marginBottom: SPACING.XXL + SPACING.XS,
+    ...SHADOWS.LARGE,
   },
   createButtonDisabled: {
     opacity: 0.6,
   },
   createButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
+    color: BRAND_COLORS.TEXT_WHITE,
+    fontSize: TYPOGRAPHY.HEADING_LARGE,
+    fontWeight: TYPOGRAPHY.BOLD,
   },
 });
